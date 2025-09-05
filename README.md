@@ -1,0 +1,2 @@
+# basit-mikatar-gecisleri
+

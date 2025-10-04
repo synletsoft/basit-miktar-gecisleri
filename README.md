@@ -1,2 +1,2 @@
-# basit-mikatar-gecisleri
+# basit-miktar-gecisleri
 

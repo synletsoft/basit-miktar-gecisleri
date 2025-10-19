@@ -1,2 +1,0 @@
-# basit-miktar-gecisleri
-

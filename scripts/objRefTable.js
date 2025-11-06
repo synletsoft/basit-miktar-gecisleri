@@ -8,6 +8,7 @@ self.C3_GetObjectRefTable = function () {
 		C3.Plugins.Audio,
 		C3.Plugins.video,
 		C3.Behaviors.DragnDrop,
+		C3.Behaviors.Fade,
 		C3.Plugins.Touch.Cnds.OnTouchObject,
 		C3.Plugins.Sprite.Cnds.CompareFrame,
 		C3.Plugins.System.Acts.Wait,
@@ -40,6 +41,7 @@ self.C3_GetObjectRefTable = function () {
 		C3.Plugins.Sprite.Exps.Y,
 		C3.Plugins.video.Acts.SetVisible,
 		C3.Plugins.video.Acts.Play,
+		C3.Behaviors.Fade.Acts.StartFade,
 		C3.Plugins.System.Cnds.EveryTick,
 		C3.Plugins.Sprite.Acts.SetWidth,
 		C3.Plugins.System.Exps.loadingprogress,
@@ -77,6 +79,8 @@ self.C3_JsPropNameTable = [
 	{popup: 0},
 	{videoBg: 0},
 	{Sprite2: 0},
+	{Fade: 0},
+	{metin: 0},
 	{damlalikControl: 0},
 	{tupControl: 0},
 	{isLoader: 0}
@@ -107,5 +111,6 @@ self.InstanceType = {
 	damlalik: class extends self.ISpriteInstance {},
 	popup: class extends self.ISpriteInstance {},
 	videoBg: class extends self.ISpriteInstance {},
-	Sprite2: class extends self.ISpriteInstance {}
+	Sprite2: class extends self.ISpriteInstance {},
+	metin: class extends self.ISpriteInstance {}
 }

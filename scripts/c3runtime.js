@@ -1331,7 +1331,6 @@ self.C3_ExpressionFuncs = [
 			const n1 = p._GetNode(1);
 			return () => (n0.ExpObject() - (n1.ExpObject() / 2));
 		},
-		() => 1.5,
 		() => 2,
 		() => 300,
 		p => {

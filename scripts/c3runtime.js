@@ -1121,6 +1121,21 @@ self["C3_Shaders"]["skymen_BetterOutline"] = {
 	animated: false,
 	parameters: [["outlinecolor",0,"color"],["width",0,"float"],["precisionStep",0,"float"],["samples",0,"float"],["opacity",0,"float"]]
 };
+self["C3_Shaders"]["tintBlend"] = {
+	glsl: "varying mediump vec2 vTex;\nuniform lowp sampler2D samplerFront;\nuniform lowp vec3 setColor;\nuniform mediump float blend;\nvoid main(void)\n{\nlowp vec4 front = texture2D(samplerFront, vTex);\ngl_FragColor = mix(front, vec4(vec3(setColor) * front.a, front.a), blend);\n}",
+	glslWebGL2: "#version 300 es\nin mediump vec2 vTex;\nuniform lowp sampler2D samplerFront;\nuniform lowp vec3 setColor;\nuniform mediump float blend;\nout lowp vec4 outColor;\nvoid main(void)\n{\nlowp vec4 front = texture(samplerFront, vTex);\noutColor = mix(front, vec4(vec3(setColor) * front.a, front.a), blend);\n}",
+	wgsl: "%%SAMPLERFRONT_BINDING%% var samplerFront : sampler;\n%%TEXTUREFRONT_BINDING%% var textureFront : texture_2d<f32>;\nstruct ShaderParams {\nsetColor : vec3<f32>,\nblend: f32\n};\n%%SHADERPARAMS_BINDING%% var<uniform> shaderParams : ShaderParams;\n%%FRAGMENTINPUT_STRUCT%%\n%%FRAGMENTOUTPUT_STRUCT%%\n@fragment\nfn main(input : FragmentInput) -> FragmentOutput\n{\nvar front : vec4<f32> = textureSample(textureFront, samplerFront, input.fragUV);\nvar output : FragmentOutput;\noutput.color = mix(front,vec4<f32>(shaderParams.setColor * front.a, front.a), shaderParams.blend);\nreturn output;\n}",
+	blendsBackground: false,
+	usesDepth: false,
+	extendBoxHorizontal: 0,
+	extendBoxVertical: 0,
+	crossSampling: false,
+	mustPreDraw: false,
+	preservesOpaqueness: true,
+	supports3dDirectRendering: true,
+	animated: false,
+	parameters: [["setColor",0,"color"],["blend",0,"percent"]]
+};
 
 }
 
@@ -1157,6 +1172,11 @@ const C3=self.C3,GESTURE_HOLD_THRESHOLD=15,GESTURE_HOLD_TIMEOUT=500,GESTURE_TAP_
 // scripts/plugins/video/c3runtime/runtime.js
 {
 {const e=self.C3,t="video";function MaybeCloseImageBitmap(e){e&&e["close"]&&e["close"]()}e.Plugins.video=class extends e.SDKDOMPluginBase{constructor(e){super(e,t),this._postImageBitmaps=!1,this._supportedFormats={},this._lastStateSequenceNumber=-1,this._videoState=new Map,this._runtime.AddLoadPromise(this._runtime.PostComponentMessageToDOMAsync("video","init",{"isInWorker":this._runtime.IsInWorker()}).then(e=>{this._postImageBitmaps=e["postImageBitmaps"],this._supportedFormats=e["supportedFormats"]})),this.AddElementMessageHandler("playback-event",(e,t)=>e._OnPlaybackEvent(t)),this._runtime.AddDOMComponentMessageHandler(t,"state",e=>this._OnUpdateState(e))}Release(){super.Release()}IsPostImageBitmapsMode(){return this._postImageBitmaps}IsFormatSupported(e){return!!this._supportedFormats[e]}_OnUpdateState(e){const t=e["sequenceNumber"];if(t<=this._lastStateSequenceNumber)for(const t of Object.values(e["videoData"]))MaybeCloseImageBitmap(t["imageBitmap"]);else{this._lastStateSequenceNumber=t;for(const e of this._videoState.values())MaybeCloseImageBitmap(e["imageBitmap"]);this._videoState.clear();for(const[t,s]of Object.entries(e["videoData"]))this._videoState.set(parseInt(t,10),s)}}_DeleteVideoState(e){this._videoState.delete(e)}GetVideoState(e){return this._videoState.get(e)||null}}}{const s=self.C3;s.Plugins.video.Type=class extends s.SDKTypeBase{constructor(e){super(e)}Release(){super.Release()}OnCreate(){}}}{const i=self.C3,a=i.New(i.Rect),r=i.New(i.Quad),n="video",o=["webm-vp8","webm-vp9","webm-av1","mp4-h264","mp4-h265","mp4-av1"];i.Plugins.video.Instance=class extends i.SDKDOMInstanceBase{constructor(e,t){super(e,n),this._primarySrc="",this._primaryFormat="mp4-h264",this._secondarySrc="",this._secondaryFormat="webm-vp9",this._autoplay=2,this._playInBackground=!1,this._videoWasPlayingOnSuspend=!1,this._webGLTexture=null,this._currentTrigger=-1,this._isSettingSource=0,this._isPlaying=!1,this._isPaused=!1,this._hasEnded=!1,this._isLooping=!1,this._isMuted=!1,this._volume=0,t&&(this._primarySrc=t[0],this._primaryFormat=o[t[1]],this._secondarySrc=t[2],this._secondaryFormat=o[t[3]],this._autoplay=t[4],this._playInBackground=t[5],this.GetWorldInfo().SetVisible(t[6]));const s=this._runtime.Dispatcher();this._disposables=new i.CompositeDisposable(i.Disposable.From(s,"renderercontextlost",()=>this._OnRendererContextLost()),i.Disposable.From(s,"suspend",()=>this._OnSuspend()),i.Disposable.From(s,"resume",()=>this._OnResume())),this.CreateElement({"src":this.GetVideoSource(),"autoplay":this._autoplay})}Release(){this.GetPlugin()._DeleteVideoState(this.GetElementId()),this._ReleaseTexture(),super.Release()}_MaybeCreateTexture(e,t,s){if(this._webGLTexture){if(this._webGLTexture.GetWidth()===t||this._webGLTexture.GetHeight()===s)return;this._ReleaseTexture()}this._webGLTexture=e.CreateDynamicTexture(t,s,{sampling:this._runtime.GetSampling(),mipMap:!1})}_ReleaseTexture(){this._webGLTexture&&(this._runtime.GetRenderer().DeleteTexture(this._webGLTexture),this._webGLTexture=null)}GetElementState(){return{}}DbToLinearNoCap(e){return Math.pow(10,e/20)}DbToLinear(e){const t=this.DbToLinearNoCap(e);return isFinite(t)?Math.max(Math.min(t,1),0):0}LinearToDbNoCap(e){return Math.log(e)/Math.log(10)*20}LinearToDb(e){return this.LinearToDbNoCap(Math.max(Math.min(e,1),0))}GetVideoSource(){let e="";const t=this.GetPlugin();return t.IsFormatSupported(this._primaryFormat)&&this._primarySrc?e=this._primarySrc:t.IsFormatSupported(this._secondaryFormat)&&this._secondarySrc&&(e=this._secondarySrc),e&&i.IsRelativeURL(e)?this._runtime.GetAssetManager().GetMediaFileUrl(e):e}_OnRendererContextLost(){this._webGLTexture=null}async _OnPlaybackEvent(e){const t=e["type"];5===t?this._SetIsPlaying(!0):2===t?(this._SetIsPlaying(!1),this._hasEnded=!0,this._isPaused=!1):6===t&&(this._SetIsPlaying(!1),this._isPaused=!0,this._hasEnded=!1),this._currentTrigger=t,await this.TriggerAsync(i.Plugins.video.Cnds.OnPlaybackEvent)}_SetIsPlaying(e){this._isPlaying=!!e,this._isPlaying?(this._StartTicking(),this._isPaused=!1,this._hasEnded=!1):this._StopTicking()}_OnSuspend(){this._playInBackground||this._isPlaying&&(this._videoWasPlayingOnSuspend=!0,this.PostToDOMElement("pause"))}_OnResume(){this._playInBackground||this._videoWasPlayingOnSuspend&&(this.PostToDOMElement("play"),this._videoWasPlayingOnSuspend=!1)}Draw(e){const t=this.GetWorldInfo();let s=0,i=0,n=null;const o=this.GetPlugin().IsPostImageBitmapsMode();if(o){const e=this.GetMyState();if(!e)return;n=e["imageBitmap"],e["imageBitmap"]=null,s=e["videoWidth"],i=e["videoHeight"]}else{const e=self["C3Video_GetElement"](this.GetElementId());if(!e)return;s=e.videoWidth,i=e.videoHeight,n=e}if(s<=0||i<=0)return;this._MaybeCreateTexture(e,s,i),n&&(e.UpdateTexture(n,this._webGLTexture),o&&n["close"]&&n["close"]());const h=s/i,u=t.GetWidth(),l=t.GetHeight();let d=0,m=0,_=0,p=0;u/l>h?(_=l*h,p=l,d=Math.max(Math.floor((u-_)/2),0)):(_=u,p=u/h,m=Math.max(Math.floor((l-p)/2),0)),e.SetTexture(this._webGLTexture),a.setWH(t.GetX()+d,t.GetY()+m,_,p),r.setFromRect(a),e.Quad(r)}Tick(){this._runtime.UpdateRender()}GetMyState(){return this.GetPlugin().GetVideoState(this.GetElementId())}}}self.C3.Plugins.video.Cnds={IsPlaying(){return this._isPlaying},IsPaused(){return this._isPaused},HasEnded(){return this._hasEnded},IsMuted(){return this._isMuted},OnPlaybackEvent(e){return this._currentTrigger===e}};{const h=self.C3,u=["webm-vp8","webm-vp9","webm-av1","mp4-h264","mp4-h265","mp4-av1"];h.Plugins.video.Acts={SetSource(e,t){this._primarySrc=e,this._primaryFormat="webm-vp8",this._secondarySrc=t,this._secondaryFormat="mp4-h264",this.PostToDOMElement("set-source",{"src":this.GetVideoSource()}),this._ReleaseTexture()},SetSource2(e,t,s,i){this._primarySrc=e,this._primaryFormat=u[t],this._secondarySrc=s,this._secondaryFormat=u[i],this.PostToDOMElement("set-source",{"src":this.GetVideoSource()}),this._ReleaseTexture()},SetPlaybackTime(e){this.PostToDOMElement("set-playback-time",{"time":e})},SetPlaybackRate(e){this.PostToDOMElement("set-playback-rate",{"rate":e})},SetLooping(e){e=0!==e,this._isLooping!==e&&(this._isLooping=e,this.PostToDOMElement("set-looping",{"isLooping":e}))},SetMuted(e){e=0!==e,this._isMuted!==e&&(this._isMuted=e,this.PostToDOMElement("set-muted",{"isMuted":e}))},SetVolume(e){this._volume!==e&&(this._volume=e,this.PostToDOMElement("set-volume",{"volume":this.DbToLinear(e)}))},Pause(){this.PostToDOMElement("pause")},Play(){this._PostToDOMElementMaybeSync("play")}}}self.C3.Plugins.video.Exps={PlaybackTime(){const e=this.GetMyState();return e?e["currentTime"]:0},PlaybackRate(){const e=this.GetMyState();return e?e["playbackRate"]:1},Duration(){const e=this.GetMyState();return e?e["duration"]:0},Volume(){return this._volume},VideoWidth(){const e=this.GetMyState();return e?e["videoWidth"]:0},VideoHeight(){const e=this.GetMyState();return e?e["videoHeight"]:0}};
+}
+
+// scripts/plugins/Mouse/c3runtime/runtime.js
+{
+{const e=self.C3;e.Plugins.Mouse=class extends e.SDKPluginBase{constructor(e){super(e)}Release(){super.Release()}}}{const t=self.C3,s=self.C3X;t.Plugins.Mouse.Type=class extends t.SDKTypeBase{constructor(e){super(e)}Release(){super.Release()}OnCreate(){}GetScriptInterfaceClass(){return self.IMouseObjectType}};let n=null;function GetMouseSdkInstance(){return n.GetSingleGlobalInstance().GetSdkInstance()}self.IMouseObjectType=class extends self.IObjectType{constructor(e){super(e),n=e,e.GetRuntime()._GetCommonScriptInterfaces().mouse=this}getMouseX(e){return GetMouseSdkInstance().GetMousePositionForLayer(e)[0]}getMouseY(e){return GetMouseSdkInstance().GetMousePositionForLayer(e)[1]}getMousePosition(e){return GetMouseSdkInstance().GetMousePositionForLayer(e)}isMouseButtonDown(e){return GetMouseSdkInstance().IsMouseButtonDown(e)}setCursorStyle(e){s.RequireString(e),GetMouseSdkInstance().SetCursorStyle(e)}setCursorObjectClass(e){const t=GetMouseSdkInstance(),s=t.GetRuntime()._UnwrapIObjectClass(e);t.SetCursorObjectClass(s)}}}{const o=self.C3,i="mouse";let r=null;o.Plugins.Mouse.Instance=class extends o.SDKInstanceBase{constructor(e,t){super(e,i),this._buttonMap=[!1,!1,!1,!1,!1],this._mouseXcanvas=0,this._mouseYcanvas=0,this._triggerButton=0,this._triggerType=0,this._triggerDir=0,this._wheelDeltaX=0,this._wheelDeltaY=0,this._wheelDeltaZ=0,this._hasPointerLock=!1,this._movementX=0,this._movementY=0,this.AddDOMMessageHandlers([["pointer-lock-change",e=>this._OnPointerLockChange(e)],["pointer-lock-error",e=>this._OnPointerLockError(e)]]);const s=this.GetRuntime().Dispatcher();this._disposables=new o.CompositeDisposable(o.Disposable.From(s,"pointermove",e=>this._OnPointerMove(e.data)),o.Disposable.From(s,"pointerdown",e=>this._OnPointerDown(e.data)),o.Disposable.From(s,"pointerup",e=>this._OnPointerUp(e.data)),o.Disposable.From(s,"dblclick",e=>this._OnDoubleClick(e.data)),o.Disposable.From(s,"wheel",e=>this._OnMouseWheel(e.data)),o.Disposable.From(s,"window-blur",()=>this._OnWindowBlur()))}Release(){super.Release()}_OnPointerDown(e){"mouse"===e["pointerType"]&&(this._mouseXcanvas=e["pageX"]-this._runtime.GetCanvasClientX(),this._mouseYcanvas=e["pageY"]-this._runtime.GetCanvasClientY(),this._CheckButtonChanges(e["lastButtons"],e["buttons"]))}_OnPointerMove(e){this._movementX=e["movementX"],this._movementY=e["movementY"],this.Trigger(o.Plugins.Mouse.Cnds.OnMovement),this._movementX=0,this._movementY=0,"mouse"===e["pointerType"]&&(this._mouseXcanvas=e["pageX"]-this._runtime.GetCanvasClientX(),this._mouseYcanvas=e["pageY"]-this._runtime.GetCanvasClientY(),this._CheckButtonChanges(e["lastButtons"],e["buttons"]))}_OnPointerUp(e){"mouse"===e["pointerType"]&&this._CheckButtonChanges(e["lastButtons"],e["buttons"])}_CheckButtonChanges(e,t){this._CheckButtonChange(e,t,1,0),this._CheckButtonChange(e,t,4,1),this._CheckButtonChange(e,t,2,2),this._CheckButtonChange(e,t,8,3),this._CheckButtonChange(e,t,16,4)}_CheckButtonChange(e,t,s,n){!(e&s)&&t&s?this._OnMouseDown(n):e&s&&!(t&s)&&this._OnMouseUp(n)}_OnMouseDown(e){this._buttonMap[e]=!0,this.Trigger(o.Plugins.Mouse.Cnds.OnAnyClick),this._triggerButton=e,this._triggerType=0,this.Trigger(o.Plugins.Mouse.Cnds.OnClick),this.Trigger(o.Plugins.Mouse.Cnds.OnObjectClicked)}_OnMouseUp(e){this._buttonMap[e]&&(this._buttonMap[e]=!1,this._triggerButton=e,this.Trigger(o.Plugins.Mouse.Cnds.OnRelease))}_OnDoubleClick(e){this._triggerButton=e["button"],this._triggerType=1,this.Trigger(o.Plugins.Mouse.Cnds.OnClick),this.Trigger(o.Plugins.Mouse.Cnds.OnObjectClicked)}_OnMouseWheel(e){this._triggerDir=e["deltaY"]<0?1:0,this._wheelDeltaX=e["deltaX"],this._wheelDeltaY=e["deltaY"],this._wheelDeltaZ=e["deltaZ"],this.Trigger(o.Plugins.Mouse.Cnds.OnWheel)}_OnWindowBlur(){for(let e=0,t=this._buttonMap.length;e<t;++e){if(!this._buttonMap[e])return;this._buttonMap[e]=!1,this._triggerButton=e,this.Trigger(o.Plugins.Mouse.Cnds.OnRelease)}}GetMousePositionForLayer(e){const t=this._runtime.GetMainRunningLayout(),s=this._mouseXcanvas,n=this._mouseYcanvas;if(void 0===e){return t.GetLayerByIndex(0).CanvasCssToLayer_DefaultTransform(s,n)}{const o=t.GetLayer(e);return o?o.CanvasCssToLayer(s,n):[0,0]}}IsMouseButtonDown(e){return e=Math.floor(e),!!this._buttonMap[e]}_IsMouseOverCanvas(){return this._mouseXcanvas>=0&&this._mouseYcanvas>=0&&this._mouseXcanvas<this._runtime.GetCanvasCssWidth()&&this._mouseYcanvas<this._runtime.GetCanvasCssHeight()}SetCursorStyle(e){r!==e&&(r=e,this.PostToDOM("cursor",e))}async SetCursorObjectClass(e){if(o.Platform.IsMobile||!e)return;const t=e.GetFirstPicked();if(!t)return;const s=t.GetWorldInfo(),n=t.GetCurrentImageInfo();if(!s||!n)return;if(r===n)return;r=n;const i=`url(${await n.ExtractImageToBlobURL()}) ${Math.round(s.GetOriginX()*n.GetWidth())} ${Math.round(s.GetOriginY()*n.GetHeight())}, auto`;this.PostToDOM("cursor",i)}_OnPointerLockChange(e){this._UpdatePointerLockState(e["has-pointer-lock"])}_OnPointerLockError(e){this._UpdatePointerLockState(e["has-pointer-lock"]),this.Trigger(o.Plugins.Mouse.Cnds.OnPointerLockError)}_UpdatePointerLockState(e){this._hasPointerLock!==e&&(this._hasPointerLock=e,this._hasPointerLock?this.Trigger(o.Plugins.Mouse.Cnds.OnPointerLocked):this.Trigger(o.Plugins.Mouse.Cnds.OnPointerUnlocked))}GetDebuggerProperties(){const e="plugins.mouse";return[{title:e+".name",properties:[{name:e+".debugger.absolute-position",value:this._mouseXcanvas+","+this._mouseYcanvas},{name:e+".debugger.left-button",value:this._buttonMap[0]},{name:e+".debugger.middle-button",value:this._buttonMap[1]},{name:e+".debugger.right-button",value:this._buttonMap[2]},{name:e+".debugger.button-4",value:this._buttonMap[3]},{name:e+".debugger.button-5",value:this._buttonMap[4]}]},{title:e+".debugger.position-on-each-layer",properties:this._runtime.GetMainRunningLayout().GetLayers().map(e=>({name:"$"+e.GetName(),value:e.CanvasCssToLayer(this._mouseXcanvas,this._mouseYcanvas).join(", ")}))}]}}}{const u=self.C3;u.Plugins.Mouse.Cnds={OnClick(e,t){return this._triggerButton===e&&this._triggerType===t},OnAnyClick:()=>!0,IsButtonDown(e){return this._buttonMap[e]},OnRelease(e){return this._triggerButton===e},IsOverObject(e){const t=this._runtime.GetCurrentCondition().IsInverted(),s=[];return this._IsMouseOverCanvas()&&s.push([this._mouseXcanvas,this._mouseYcanvas]),u.xor(this._runtime.GetCollisionEngine().TestAndSelectCanvasPointOverlap(e,s,t),t)},OnObjectClicked(e,t,s){if(e!==this._triggerButton||t!==this._triggerType)return!1;if(!this._IsMouseOverCanvas())return!1;const n=this._mouseXcanvas,o=this._mouseYcanvas;return this._runtime.GetCollisionEngine().TestAndSelectCanvasPointOverlap(s,[[n,o]],!1)},OnWheel(e){return 2===e||this._triggerDir===e},OnPointerLocked:()=>!0,OnPointerUnlocked:()=>!0,OnPointerLockError:()=>!0,HasPointerLock(){return this._hasPointerLock},OnMovement:()=>!0}}{const a=self.C3,h=["auto","pointer","text","crosshair","move","help","wait","none"],l=["auto","all-scroll","none","help","pointer","progress","wait","cell","crosshair","text","vertical-text","alias","copy","move","not-allowed","grab","grabbing","col-resize","row-resize","ew-resize","ns-resize","nesw-resize","nwse-resize","zoom-in","zoom-out"];a.Plugins.Mouse.Acts={SetCursor(e){this.SetCursorStyle(h[e])},SetCursor2(e){this.SetCursorStyle(l[e])},SetCursorSprite(e){this.SetCursorObjectClass(e)},RequestPointerLock(e){this._PostToDOMMaybeSync("request-pointer-lock",{"unadjustedMovement":e})},ReleasePointerLock(){this.PostToDOM("release-pointer-lock")}}}self.C3.Plugins.Mouse.Exps={X(e){return this.GetMousePositionForLayer(e)[0]},Y(e){return this.GetMousePositionForLayer(e)[1]},AbsoluteX(){return this._mouseXcanvas},AbsoluteY(){return this._mouseYcanvas},MovementX(){return this._movementX},MovementY(){return this._movementY},WheelDeltaX(){return this._wheelDeltaX},WheelDeltaY(){return this._wheelDeltaY},WheelDeltaZ(){return this._wheelDeltaZ}};
 }
 
 // scripts/behaviors/Tween/c3runtime/runtime.js
@@ -1341,7 +1361,60 @@ self.C3_ExpressionFuncs = [
 			const f0 = p._GetNode(0).GetBoundMethod();
 			return () => f0();
 		},
-		() => 0.2
+		() => 0.2,
+		() => "TintBlend",
+		() => 20,
+		p => {
+			const n0 = p._GetNode(0);
+			return () => and("game", n0.ExpInstVar());
+		},
+		() => "video1ters.mp4",
+		() => 10,
+		() => "video1.mp4",
+		p => {
+			const n0 = p._GetNode(0);
+			const n1 = p._GetNode(1);
+			return () => (n0.ExpObject() + (n1.ExpObject() / 2));
+		},
+		() => 0.25,
+		() => 100,
+		() => 1.5,
+		p => {
+			const v0 = p._GetNode(0).GetVar();
+			return () => (20 - v0.GetValue());
+		},
+		p => {
+			const n0 = p._GetNode(0);
+			return () => (750 / (40 - n0.ExpObject()));
+		},
+		p => {
+			const n0 = p._GetNode(0);
+			return () => (n0.ExpObject() + 70);
+		},
+		p => {
+			const n0 = p._GetNode(0);
+			const n1 = p._GetNode(1);
+			return () => ((n0.ExpObject() - (n1.ExpObject() / 2)) - 50);
+		},
+		() => "bosalt",
+		p => {
+			const n0 = p._GetNode(0);
+			return () => (n0.ExpObject() - 5);
+		},
+		() => 6,
+		() => 2200,
+		() => 13,
+		() => "video6ters.mp4",
+		() => "video8ters.mp4",
+		() => 4,
+		() => "video6.mp4",
+		() => 9,
+		() => "video8.mp4",
+		() => 2.5,
+		p => {
+			const n0 = p._GetNode(0);
+			return () => (13 - n0.ExpObject());
+		}
 ];
 
 

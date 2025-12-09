@@ -70,6 +70,7 @@ self.C3_GetObjectRefTable = function () {
 		C3.Plugins.Sprite.Acts.SetAnim,
 		C3.Plugins.System.Cnds.TriggerOnce,
 		C3.Plugins.Arr.Acts.Delete,
+		C3.Plugins.Arr.Cnds.CompareSize,
 		C3.Plugins.System.Cnds.EveryTick,
 		C3.Plugins.System.Exps.loadingprogress,
 		C3.Plugins.System.Acts.GoToLayout

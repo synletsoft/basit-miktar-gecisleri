@@ -1465,6 +1465,11 @@ self.C3_ExpressionFuncs = [
 		p => {
 			const n0 = p._GetNode(0);
 			const n1 = p._GetNode(1);
+			return () => subtract(n0.ExpObject(and(n1.ExpObject(0), ".ornek")), 1);
+		},
+		p => {
+			const n0 = p._GetNode(0);
+			const n1 = p._GetNode(1);
 			return () => n0.ExpObject(and(n1.ExpObject(0), ".set"));
 		},
 		() => 3,
